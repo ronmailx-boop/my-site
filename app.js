@@ -3,6 +3,8 @@ const STORAGE_KEY = 'shopping-list-items';
 const addForm = document.getElementById('add-form');
 const nameInput = document.getElementById('name-input');
 const quantityInput = document.getElementById('quantity-input');
+const quantityDecreaseBtn = document.getElementById('quantity-decrease');
+const quantityIncreaseBtn = document.getElementById('quantity-increase');
 const list = document.getElementById('list');
 const emptyMessage = document.getElementById('empty-message');
 const clearPurchasedBtn = document.getElementById('clear-purchased-btn');
@@ -83,6 +85,16 @@ addForm.addEventListener('submit', (e) => {
   nameInput.value = '';
   quantityInput.value = '1';
   nameInput.focus();
+});
+
+quantityDecreaseBtn.addEventListener('click', () => {
+  const current = Math.max(1, parseInt(quantityInput.value, 10) || 1);
+  quantityInput.value = Math.max(1, current - 1);
+});
+
+quantityIncreaseBtn.addEventListener('click', () => {
+  const current = Math.max(1, parseInt(quantityInput.value, 10) || 1);
+  quantityInput.value = current + 1;
 });
 
 list.addEventListener('click', (e) => {
