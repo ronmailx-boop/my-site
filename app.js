@@ -49,7 +49,13 @@ function render() {
       <span class="shrink-0 text-sm text-gray-500">x${item.quantity}</span>
       <button data-action="delete" data-id="${item.id}"
         class="shrink-0 w-8 h-8 flex items-center justify-center text-red-500 active:text-red-700">
-        🗑
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+          <path d="M3 6h18" />
+          <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+          <path d="M10 11v6" />
+          <path d="M14 11v6" />
+        </svg>
       </button>
     `;
 
