@@ -1,12 +1,12 @@
 # Project State — Shopping List App
 
 ## Current Focus
-האפליקציה הבסיסית הושלמה (הוספת מוצר, סימון V, מחיקה, ניקוי מוצרים שנקנו), עלתה ל-main, ופורסמה ב-GitHub Pages בכתובת:
+האפליקציה כוללת כעת: הוספת מוצר (עם כפתור פלוס ירוק גדול וסטפר כמות +/-), סימון V, מחיקה, ניקוי מוצרים שנקנו, וגרירת מוצרים (ידית ⠿) להחלפת סדר ביניהם. הכל עלה ל-main ופורסם אוטומטית ב-GitHub Pages בכתובת:
 https://ronmailx-boop.github.io/my-site/
 
 הפריסה רצה אוטומטית בכל push ל-main דרך `.github/workflows/pages.yml`.
 
-**הצעד הבא (אם ירצה):** אימות ידנית של האתר בדפדפן אמיתי (עיצוב Tailwind + RTL) — לא ניתן היה לאמת זאת דרך הסביבה של Claude Code כי ה-proxy שלה חוסם גישה ל-github.io. מעבר לזה, אין משימות פתוחות; אפשר להמשיך עם שיפורים/פיצ'רים נוספים לפי בקשה.
+**הצעד הבא (אם ירצה):** אימות ידנית של האתר בדפדפן אמיתי (עיצוב Tailwind + RTL + הגרירה) — לא ניתן היה לאמת זאת דרך הסביבה של Claude Code כי ה-proxy שלה חוסם גישה ל-github.io. מעבר לזה, אין משימות פתוחות; אפשר להמשיך עם שיפורים/פיצ'רים נוספים לפי בקשה.
 
 ## Checklist
 - [x] index.html scaffold (RTL, Tailwind CDN, form + list container)
@@ -19,4 +19,7 @@ https://ronmailx-boop.github.io/my-site/
 - [x] Mobile-first responsive pass
 - [x] README.md updated with project description
 - [x] GitHub Actions workflow deploying to GitHub Pages (main branch)
+- [x] Large round green plus button for adding products
+- [x] Quantity plus/minus stepper (replaces typable number field)
+- [x] Drag handle to reorder/swap products (Pointer Events, mobile-friendly)
 - [ ] אימות ידנית של האתר החי בדפדפן
