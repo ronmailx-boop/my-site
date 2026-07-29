@@ -42,7 +42,7 @@ function render() {
     li.dataset.id = item.id;
 
     li.innerHTML = `
-      <span class="drag-handle shrink-0 w-6 h-8 flex items-center justify-center text-gray-400 cursor-grab touch-none select-none">⠿</span>
+      <span class="drag-handle shrink-0 w-9 h-10 flex items-center justify-center text-xl text-gray-400 cursor-grab touch-none select-none">⠿</span>
       <button data-action="toggle" data-id="${item.id}"
         class="w-8 h-8 shrink-0 rounded-full border-2 flex items-center justify-center ${item.purchased ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300'}">
         ${item.purchased ? '✓' : ''}
@@ -123,6 +123,7 @@ let draggedId = null;
 
 function onDragPointerMove(e) {
   if (!draggedId) return;
+  e.preventDefault();
 
   const target = document.elementFromPoint(e.clientX, e.clientY);
   const targetLi = target && target.closest('li[data-id]');
@@ -149,8 +150,9 @@ list.addEventListener('pointerdown', (e) => {
   const li = handle.closest('li[data-id]');
   if (!li) return;
 
+  e.preventDefault();
   draggedId = li.dataset.id;
-  document.addEventListener('pointermove', onDragPointerMove);
+  document.addEventListener('pointermove', onDragPointerMove, { passive: false });
   document.addEventListener('pointerup', onDragPointerUp);
 });
 
