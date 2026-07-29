@@ -30,7 +30,7 @@ function render() {
 
   const sorted = [...items].sort((a, b) => {
     if (a.purchased !== b.purchased) return a.purchased ? 1 : -1;
-    return a.createdAt - b.createdAt;
+    return 0;
   });
 
   emptyMessage.classList.toggle('hidden', items.length > 0);
@@ -39,8 +39,10 @@ function render() {
   for (const item of sorted) {
     const li = document.createElement('li');
     li.className = 'flex items-center gap-2 rounded-lg bg-white shadow-sm px-3 py-3';
+    li.dataset.id = item.id;
 
     li.innerHTML = `
+      <span class="drag-handle shrink-0 w-6 h-8 flex items-center justify-center text-gray-400 cursor-grab touch-none select-none">⠿</span>
       <button data-action="toggle" data-id="${item.id}"
         class="w-8 h-8 shrink-0 rounded-full border-2 flex items-center justify-center ${item.purchased ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300'}">
         ${item.purchased ? '✓' : ''}
@@ -77,7 +79,6 @@ addForm.addEventListener('submit', (e) => {
     name,
     quantity,
     purchased: false,
-    createdAt: Date.now(),
   });
 
   saveAndRender();
@@ -116,6 +117,41 @@ list.addEventListener('click', (e) => {
 clearPurchasedBtn.addEventListener('click', () => {
   items = items.filter(item => !item.purchased);
   saveAndRender();
+});
+
+let draggedId = null;
+
+function onDragPointerMove(e) {
+  if (!draggedId) return;
+
+  const target = document.elementFromPoint(e.clientX, e.clientY);
+  const targetLi = target && target.closest('li[data-id]');
+  if (!targetLi || targetLi.dataset.id === draggedId) return;
+
+  const fromIndex = items.findIndex(i => i.id === draggedId);
+  const toIndex = items.findIndex(i => i.id === targetLi.dataset.id);
+  if (fromIndex === -1 || toIndex === -1) return;
+
+  [items[fromIndex], items[toIndex]] = [items[toIndex], items[fromIndex]];
+  saveAndRender();
+}
+
+function onDragPointerUp() {
+  draggedId = null;
+  document.removeEventListener('pointermove', onDragPointerMove);
+  document.removeEventListener('pointerup', onDragPointerUp);
+}
+
+list.addEventListener('pointerdown', (e) => {
+  const handle = e.target.closest('.drag-handle');
+  if (!handle) return;
+
+  const li = handle.closest('li[data-id]');
+  if (!li) return;
+
+  draggedId = li.dataset.id;
+  document.addEventListener('pointermove', onDragPointerMove);
+  document.addEventListener('pointerup', onDragPointerUp);
 });
 
 render();
