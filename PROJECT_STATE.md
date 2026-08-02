@@ -1,25 +1,16 @@
-# Project State — Shopping List App
+# Project State — App Launcher (GitHub Repos Aggregator)
 
 ## Current Focus
-האפליקציה כוללת כעת: הוספת מוצר (עם כפתור פלוס ירוק גדול וסטפר כמות +/-), סימון V, מחיקה, ניקוי מוצרים שנקנו, וגרירת מוצרים (ידית ⠿) להחלפת סדר ביניהם. הכל עלה ל-main ופורסם אוטומטית ב-GitHub Pages בכתובת:
-https://ronmailx-boop.github.io/my-site/
+האפליקציה הוחלפה מרשימת קניות למסך "אפליקציות" שמאגד את כל הריפוזיטוריז הציבוריים מ-GitHub (`ronmailx-boop`) כאייקונים לחיצים, בהשראת מסך Apps של כרום באנדרואיד. הרשימה נטענת דינמית מול `api.github.com` בכל טעינת עמוד (ללא hardcoding), כך שריפו חדש מופיע אוטומטית. לכל אייקון יש ניסיון טעינת favicon מה-GitHub Pages של הריפו, עם נפילה חזרה לאריח צבעוני עם האות הראשונה. לחיצה על אייקון מובילה ל-GitHub Pages של אותו ריפו. הכל עלה ל-`claude/github-repos-aggregator-bi0jjv` וממתין לפריסה.
 
-הפריסה רצה אוטומטית בכל push ל-main דרך `.github/workflows/pages.yml`.
-
-**הצעד הבא (אם ירצה):** אימות ידנית של האתר בדפדפן אמיתי (עיצוב Tailwind + RTL + הגרירה) — לא ניתן היה לאמת זאת דרך הסביבה של Claude Code כי ה-proxy שלה חוסם גישה ל-github.io. מעבר לזה, אין משימות פתוחות; אפשר להמשיך עם שיפורים/פיצ'רים נוספים לפי בקשה.
+**הצעד הבא (אם ירצה):** אימות ידנית של האתר החי בדפדפן אמיתי (טעינת הריפואים בפועל, בדיקת fallback לאייקונים, RTL/מובייל) — לא ניתן היה לאמת זאת דרך הסביבה של Claude Code כי ה-proxy שלה חוסם גישה ל-github.io ול-api.github.com.
 
 ## Checklist
-- [x] index.html scaffold (RTL, Tailwind CDN, form + list container)
-- [x] app.js: localStorage load/save helpers
-- [x] app.js: render list function
-- [x] Feature: add product (name + quantity)
-- [x] Feature: toggle purchased (V)
-- [x] Feature: delete product
-- [x] Feature: clear purchased button
-- [x] Mobile-first responsive pass
-- [x] README.md updated with project description
-- [x] GitHub Actions workflow deploying to GitHub Pages (main branch)
-- [x] Large round green plus button for adding products
-- [x] Quantity plus/minus stepper (replaces typable number field)
-- [x] Drag handle to reorder/swap products (Pointer Events, mobile-friendly)
-- [ ] אימות ידנית של האתר החי בדפדפן
+- [x] index.html: מסך "האפליקציות שלי" (RTL, Tailwind CDN, רקע כהה, מצבי טעינה/שגיאה/ריק)
+- [x] app.js: fetch דינמי מול GitHub API (`/users/{username}/repos`)
+- [x] app.js: סינון forks
+- [x] app.js: רינדור גריד אייקונים + קישור ל-GitHub Pages של כל ריפו
+- [x] app.js: fallback לאייקון (אות ראשונה + צבע לפי hash) כשאין favicon
+- [x] טיפול בשגיאות רשת עם הודעה בעברית + כפתור נסה שוב
+- [x] README.md עודכן לתיאור הפרויקט החדש
+- [ ] אימות ידנית של האתר החי בדפדפן (כולל בדיקת ריפואים אמיתיים ו-favicons)

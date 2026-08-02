@@ -1,65 +1,15 @@
-const STORAGE_KEY = 'shopping-list-items';
+const GITHUB_USERNAME = 'ronmailx-boop';
 
-const addForm = document.getElementById('add-form');
-const nameInput = document.getElementById('name-input');
-const quantityInput = document.getElementById('quantity-input');
-const quantityDecreaseBtn = document.getElementById('quantity-decrease');
-const quantityIncreaseBtn = document.getElementById('quantity-increase');
-const list = document.getElementById('list');
-const emptyMessage = document.getElementById('empty-message');
-const clearPurchasedBtn = document.getElementById('clear-purchased-btn');
+const ICON_COLORS = [
+  '#ef4444', '#f97316', '#eab308', '#22c55e',
+  '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899',
+];
 
-function loadItems() {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  return raw ? JSON.parse(raw) : [];
-}
-
-function saveItems(items) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-}
-
-let items = loadItems();
-
-function saveAndRender() {
-  saveItems(items);
-  render();
-}
-
-function render() {
-  list.innerHTML = '';
-
-  const sorted = [...items].sort((a, b) => {
-    if (a.purchased !== b.purchased) return a.purchased ? 1 : -1;
-    return 0;
-  });
-
-  emptyMessage.classList.toggle('hidden', items.length > 0);
-  clearPurchasedBtn.classList.toggle('hidden', !items.some(item => item.purchased));
-
-  for (const item of sorted) {
-    const li = document.createElement('li');
-    li.className = 'flex items-center gap-2 rounded-lg bg-white shadow-sm px-3 py-3';
-    li.dataset.id = item.id;
-
-    li.innerHTML = `
-      <span class="drag-handle shrink-0 w-9 h-10 flex items-center justify-center text-xl text-gray-400 cursor-grab touch-none select-none">⠿</span>
-      <button data-action="toggle" data-id="${item.id}"
-        class="w-8 h-8 shrink-0 rounded-full border-2 flex items-center justify-center ${item.purchased ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300'}">
-        ${item.purchased ? '✓' : ''}
-      </button>
-      <span class="flex-1 min-w-0 truncate text-base ${item.purchased ? 'line-through text-gray-400' : ''}">
-        ${escapeHtml(item.name)}
-      </span>
-      <span class="shrink-0 text-sm text-gray-500">x${item.quantity}</span>
-      <button data-action="delete" data-id="${item.id}"
-        class="shrink-0 w-8 h-8 flex items-center justify-center text-red-500 active:text-red-700">
-        🗑
-      </button>
-    `;
-
-    list.appendChild(li);
-  }
-}
+const loadingEl = document.getElementById('loading');
+const errorEl = document.getElementById('error-message');
+const emptyEl = document.getElementById('empty-message');
+const retryBtn = document.getElementById('retry-btn');
+const grid = document.getElementById('apps-grid');
 
 function escapeHtml(str) {
   const div = document.createElement('div');
@@ -67,93 +17,61 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
-addForm.addEventListener('submit', (e) => {
-  e.preventDefault();
-
-  const name = nameInput.value.trim();
-  const quantity = Math.max(1, parseInt(quantityInput.value, 10) || 1);
-  if (!name) return;
-
-  items.push({
-    id: crypto.randomUUID(),
-    name,
-    quantity,
-    purchased: false,
-  });
-
-  saveAndRender();
-
-  nameInput.value = '';
-  quantityInput.value = '1';
-  nameInput.focus();
-});
-
-quantityDecreaseBtn.addEventListener('click', () => {
-  const current = Math.max(1, parseInt(quantityInput.value, 10) || 1);
-  quantityInput.value = Math.max(1, current - 1);
-});
-
-quantityIncreaseBtn.addEventListener('click', () => {
-  const current = Math.max(1, parseInt(quantityInput.value, 10) || 1);
-  quantityInput.value = current + 1;
-});
-
-list.addEventListener('click', (e) => {
-  const button = e.target.closest('button[data-action]');
-  if (!button) return;
-
-  const { action, id } = button.dataset;
-
-  if (action === 'toggle') {
-    const item = items.find(i => i.id === id);
-    if (item) item.purchased = !item.purchased;
-  } else if (action === 'delete') {
-    items = items.filter(i => i.id !== id);
+function colorForRepo(name) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
   }
-
-  saveAndRender();
-});
-
-clearPurchasedBtn.addEventListener('click', () => {
-  items = items.filter(item => !item.purchased);
-  saveAndRender();
-});
-
-let draggedId = null;
-
-function onDragPointerMove(e) {
-  if (!draggedId) return;
-  e.preventDefault();
-
-  const target = document.elementFromPoint(e.clientX, e.clientY);
-  const targetLi = target && target.closest('li[data-id]');
-  if (!targetLi || targetLi.dataset.id === draggedId) return;
-
-  const fromIndex = items.findIndex(i => i.id === draggedId);
-  const toIndex = items.findIndex(i => i.id === targetLi.dataset.id);
-  if (fromIndex === -1 || toIndex === -1) return;
-
-  [items[fromIndex], items[toIndex]] = [items[toIndex], items[fromIndex]];
-  saveAndRender();
+  return ICON_COLORS[hash % ICON_COLORS.length];
 }
 
-function onDragPointerUp() {
-  draggedId = null;
-  document.removeEventListener('pointermove', onDragPointerMove);
-  document.removeEventListener('pointerup', onDragPointerUp);
+function renderRepos(repos) {
+  grid.innerHTML = '';
+  emptyEl.classList.toggle('hidden', repos.length > 0);
+
+  for (const repo of repos) {
+    const pagesUrl = `https://${GITHUB_USERNAME}.github.io/${repo.name}/`;
+    const faviconUrl = `${pagesUrl}favicon.ico`;
+    const letter = repo.name.charAt(0).toUpperCase();
+    const color = colorForRepo(repo.name);
+
+    const link = document.createElement('a');
+    link.href = pagesUrl;
+    link.className = 'flex flex-col items-center gap-1.5 min-w-0';
+
+    link.innerHTML = `
+      <span class="relative w-16 h-16 rounded-2xl shadow-lg shrink-0 overflow-hidden">
+        <span class="absolute inset-0 flex items-center justify-center text-2xl font-bold text-white" style="background:${color}">${escapeHtml(letter)}</span>
+        <img src="${faviconUrl}" loading="lazy" class="absolute inset-0 w-full h-full object-cover bg-white" onerror="this.remove()">
+      </span>
+      <span class="text-xs text-center w-full truncate">${escapeHtml(repo.name)}</span>
+    `;
+
+    grid.appendChild(link);
+  }
 }
 
-list.addEventListener('pointerdown', (e) => {
-  const handle = e.target.closest('.drag-handle');
-  if (!handle) return;
+async function loadRepos() {
+  loadingEl.classList.remove('hidden');
+  errorEl.classList.add('hidden');
+  emptyEl.classList.add('hidden');
+  grid.innerHTML = '';
 
-  const li = handle.closest('li[data-id]');
-  if (!li) return;
+  try {
+    const res = await fetch(`https://api.github.com/users/${GITHUB_USERNAME}/repos?sort=updated&per_page=100`);
+    if (!res.ok) throw new Error('GitHub API error');
 
-  e.preventDefault();
-  draggedId = li.dataset.id;
-  document.addEventListener('pointermove', onDragPointerMove, { passive: false });
-  document.addEventListener('pointerup', onDragPointerUp);
-});
+    const repos = await res.json();
+    const ownRepos = repos.filter(repo => !repo.fork);
 
-render();
+    loadingEl.classList.add('hidden');
+    renderRepos(ownRepos);
+  } catch (err) {
+    loadingEl.classList.add('hidden');
+    errorEl.classList.remove('hidden');
+  }
+}
+
+retryBtn.addEventListener('click', loadRepos);
+
+loadRepos();
