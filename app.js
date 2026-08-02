@@ -7,6 +7,7 @@ const ICON_COLORS = [
 
 const loadingEl = document.getElementById('loading');
 const errorEl = document.getElementById('error-message');
+const errorText = document.getElementById('error-text');
 const emptyEl = document.getElementById('empty-message');
 const retryBtn = document.getElementById('retry-btn');
 const grid = document.getElementById('apps-grid');
@@ -57,9 +58,22 @@ async function loadRepos() {
   emptyEl.classList.add('hidden');
   grid.innerHTML = '';
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000);
+
   try {
-    const res = await fetch(`https://api.github.com/users/${GITHUB_USERNAME}/repos?sort=updated&per_page=100`);
-    if (!res.ok) throw new Error('GitHub API error');
+    const res = await fetch(
+      `https://api.github.com/users/${GITHUB_USERNAME}/repos?sort=updated&per_page=100`,
+      { signal: controller.signal }
+    );
+    clearTimeout(timeoutId);
+
+    if (res.status === 403) {
+      throw new Error('חריגה ממכסת הבקשות ל-GitHub. נסו שוב בעוד כמה דקות.');
+    }
+    if (!res.ok) {
+      throw new Error('אירעה שגיאה בטעינת הריפואים מ-GitHub. בדקו את החיבור לאינטרנט ונסו שוב.');
+    }
 
     const repos = await res.json();
     const ownRepos = repos.filter(repo => !repo.fork);
@@ -67,7 +81,11 @@ async function loadRepos() {
     loadingEl.classList.add('hidden');
     renderRepos(ownRepos);
   } catch (err) {
+    clearTimeout(timeoutId);
     loadingEl.classList.add('hidden');
+    errorText.textContent = err.name === 'AbortError'
+      ? 'הבקשה ל-GitHub נמשכה זמן רב מדי. בדקו את החיבור לרשת ונסו שוב.'
+      : (err.message || 'אירעה שגיאה בטעינת הריפואים מ-GitHub. בדקו את החיבור לאינטרנט ונסו שוב.');
     errorEl.classList.remove('hidden');
   }
 }
