@@ -1,4 +1,5 @@
 const GITHUB_USERNAME = 'ronmailx-boop';
+const SELF_REPO = 'my-site';
 
 const ICON_COLORS = [
   '#ef4444', '#f97316', '#eab308', '#22c55e',
@@ -118,7 +119,7 @@ async function loadRepos() {
     }
 
     const repos = await res.json();
-    const ownRepos = repos.filter(repo => !repo.fork);
+    const ownRepos = repos.filter(repo => !repo.fork && repo.name !== SELF_REPO);
 
     loadingEl.classList.add('hidden');
     renderRepos(ownRepos);
