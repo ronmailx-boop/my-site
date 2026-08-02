@@ -26,13 +26,50 @@ function colorForRepo(name) {
   return ICON_COLORS[hash % ICON_COLORS.length];
 }
 
+function iconSizeValue(sizes) {
+  if (!sizes) return 0;
+  const [width] = sizes.split('x').map(Number);
+  return width || 0;
+}
+
+async function resolveRepoIcon(pagesUrl) {
+  try {
+    const htmlRes = await fetch(pagesUrl);
+    if (!htmlRes.ok) throw new Error('no pages');
+
+    const html = await htmlRes.text();
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+
+    const manifestHref = doc.querySelector('link[rel="manifest"]')?.getAttribute('href');
+    if (manifestHref) {
+      const manifestUrl = new URL(manifestHref, pagesUrl).href;
+      const manifestRes = await fetch(manifestUrl);
+      if (manifestRes.ok) {
+        const manifest = await manifestRes.json();
+        const icons = manifest.icons || [];
+        const best = [...icons].sort((a, b) => iconSizeValue(b.sizes) - iconSizeValue(a.sizes))[0];
+        if (best?.src) return new URL(best.src, manifestUrl).href;
+      }
+    }
+
+    const appleIconHref = doc.querySelector('link[rel="apple-touch-icon"]')?.getAttribute('href');
+    if (appleIconHref) return new URL(appleIconHref, pagesUrl).href;
+
+    const iconHref = doc.querySelector('link[rel="icon"], link[rel="shortcut icon"]')?.getAttribute('href');
+    if (iconHref) return new URL(iconHref, pagesUrl).href;
+  } catch (err) {
+    // fall through to the favicon.ico guess below
+  }
+
+  return `${pagesUrl}favicon.ico`;
+}
+
 function renderRepos(repos) {
   grid.innerHTML = '';
   emptyEl.classList.toggle('hidden', repos.length > 0);
 
   for (const repo of repos) {
     const pagesUrl = `https://${GITHUB_USERNAME}.github.io/${repo.name}/`;
-    const faviconUrl = `${pagesUrl}favicon.ico`;
     const letter = repo.name.charAt(0).toUpperCase();
     const color = colorForRepo(repo.name);
 
@@ -43,12 +80,17 @@ function renderRepos(repos) {
     link.innerHTML = `
       <span class="relative w-16 h-16 rounded-2xl shadow-lg shrink-0 overflow-hidden">
         <span class="absolute inset-0 flex items-center justify-center text-2xl font-bold text-white" style="background:${color}">${escapeHtml(letter)}</span>
-        <img src="${faviconUrl}" loading="lazy" class="absolute inset-0 w-full h-full object-cover bg-white" onerror="this.remove()">
+        <img class="app-icon absolute inset-0 w-full h-full object-cover bg-white" loading="lazy" onerror="this.remove()">
       </span>
       <span class="text-xs text-center w-full truncate">${escapeHtml(repo.name)}</span>
     `;
 
     grid.appendChild(link);
+
+    const imgEl = link.querySelector('.app-icon');
+    resolveRepoIcon(pagesUrl).then(iconUrl => {
+      imgEl.src = iconUrl;
+    });
   }
 }
 
