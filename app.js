@@ -12,6 +12,12 @@ const errorText = document.getElementById('error-text');
 const emptyEl = document.getElementById('empty-message');
 const retryBtn = document.getElementById('retry-btn');
 const grid = document.getElementById('apps-grid');
+const list = document.getElementById('apps-list');
+const viewToggleBtn = document.getElementById('view-toggle');
+
+let currentRepos = [];
+let viewMode = 'grid';
+let listRendered = false;
 
 function escapeHtml(str) {
   const div = document.createElement('div');
@@ -64,6 +70,103 @@ async function resolveRepoIcon(pagesUrl) {
 
   return `${pagesUrl}favicon.ico`;
 }
+
+function stripMarkdown(text) {
+  return text
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/(\*\*|__)(.+?)\1/g, '$2')
+    .replace(/(\*|_)(.+?)\1/g, '$2')
+    .trim();
+}
+
+function extractFirstParagraph(markdown) {
+  const lines = markdown.split('\n');
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i].trim();
+    if (line === '' || /^#{1,6}\s/.test(line) || /^!?\[!?\[/.test(line) || /^!\[/.test(line)) {
+      i++;
+      continue;
+    }
+    break;
+  }
+
+  const paragraphLines = [];
+  while (i < lines.length) {
+    const line = lines[i].trim();
+    if (line === '' || /^#{1,6}\s/.test(line)) break;
+    paragraphLines.push(line);
+    i++;
+  }
+
+  return stripMarkdown(paragraphLines.join(' '));
+}
+
+async function resolveRepoDescription(repo) {
+  try {
+    const branch = repo.default_branch || 'main';
+    const res = await fetch(`https://raw.githubusercontent.com/${GITHUB_USERNAME}/${repo.name}/${branch}/README.md`);
+    if (!res.ok) return '';
+    return extractFirstParagraph(await res.text());
+  } catch (err) {
+    return '';
+  }
+}
+
+function renderReposList(repos) {
+  list.innerHTML = '';
+
+  for (const repo of repos) {
+    const pagesUrl = `https://${GITHUB_USERNAME}.github.io/${repo.name}/`;
+    const letter = repo.name.charAt(0).toUpperCase();
+    const color = colorForRepo(repo.name);
+
+    const link = document.createElement('a');
+    link.href = pagesUrl;
+    link.className = 'flex items-start gap-3';
+
+    link.innerHTML = `
+      <span class="relative w-14 h-14 rounded-2xl shadow-lg shrink-0 overflow-hidden">
+        <span class="absolute inset-0 flex items-center justify-center text-xl font-bold text-white" style="background:${color}">${escapeHtml(letter)}</span>
+        <img class="app-icon absolute inset-0 w-full h-full object-cover bg-white" loading="lazy" onerror="this.remove()">
+      </span>
+      <span class="min-w-0 pt-1">
+        <span class="block font-bold">${escapeHtml(repo.name)}</span>
+        <span class="app-description block text-sm text-gray-400 mt-0.5"></span>
+      </span>
+    `;
+
+    list.appendChild(link);
+
+    const imgEl = link.querySelector('.app-icon');
+    resolveRepoIcon(pagesUrl).then(iconUrl => {
+      imgEl.src = iconUrl;
+    });
+
+    const descEl = link.querySelector('.app-description');
+    resolveRepoDescription(repo).then(description => {
+      if (description) descEl.textContent = description;
+    });
+  }
+}
+
+function setViewMode(mode) {
+  viewMode = mode;
+  grid.classList.toggle('hidden', mode !== 'grid');
+  list.classList.toggle('hidden', mode !== 'list');
+  viewToggleBtn.textContent = mode === 'grid' ? 'תצוגת רשימה' : 'תצוגת סמלים';
+
+  if (mode === 'list' && !listRendered) {
+    listRendered = true;
+    renderReposList(currentRepos);
+  }
+}
+
+viewToggleBtn.addEventListener('click', () => {
+  setViewMode(viewMode === 'grid' ? 'list' : 'grid');
+});
 
 function renderRepos(repos) {
   grid.innerHTML = '';
@@ -121,7 +224,10 @@ async function loadRepos() {
     const repos = await res.json();
     const ownRepos = repos.filter(repo => !repo.fork && repo.name !== SELF_REPO);
 
+    currentRepos = ownRepos;
+    listRendered = false;
     loadingEl.classList.add('hidden');
+    viewToggleBtn.classList.toggle('hidden', ownRepos.length === 0);
     renderRepos(ownRepos);
   } catch (err) {
     clearTimeout(timeoutId);
